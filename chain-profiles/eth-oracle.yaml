@@ -1,0 +1,15 @@
+validators:
+  - profile: node-1
+    key: 0
+    chainId: 1
+    rootChainId: 1
+    committees:
+      - 1
+      - 2
+  - profile: node-2
+    key: 0
+    chainId: 2
+    rootChainId: 1
+    oracle: true
+    committees:
+      - 2

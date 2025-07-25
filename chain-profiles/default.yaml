@@ -1,0 +1,19 @@
+validators:
+  - profile: node-1
+    key: 0
+    chainId: 1
+    rootChainId: 1
+    committees:
+      - 1
+  - profile: node-2
+    key: 1
+    chainId: 1
+    rootChainId: 1
+    committees:
+      - 1
+  - profile: node-3
+    key: 2
+    chainId: 1
+    rootChainId: 1
+    committees:
+      - 1

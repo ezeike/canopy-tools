@@ -1,0 +1,140 @@
+version: '3'
+
+tasks:
+  # Start local Ethereum test environment with USDC contract
+  # - Launches Anvil (local Ethereum node) with 2-second block times
+  # - Deploys USDC ERC20 contract to the local network
+  # - Mints USDC tokens to test accounts for testing purposes
+  # - Keeps Anvil running until manually stopped
+  anvil:
+    desc: "Start Anvil node, deploy USDC contract, and mint test tokens"
+    dir: eth-oracle
+    cmds:
+      - scripts/anvil.sh
+
+  # Build and start Canopy blockchain node for oracle testing
+  # - Builds the Canopy binary from source
+  # - Cleans up previous oracle state (eth_last_height.txt)
+  # - Executes socket.sh (likely for network setup)
+  # - Loads USDC contract environment variables and starts Canopy node
+  canopy:
+    desc: "Build and start Canopy node with oracle configuration"
+    dir: ~/go/src/canopy-testing
+    cmds:
+      # - (cd ../canopy && make build/canopy)
+      # - rm -rf ~/.canopy/oracle/last_block_height.txt
+      - ./socket.sh
+      - source eth-oracle/env/usdc_contract.env && canopy start
+
+  node-1:
+    desc: "Build and start Canopy node-1"
+    dir: ~/go/src/canopy-testing
+    cmds:
+      - ./socket.sh
+      - source eth-oracle/env/usdc_contract.env && air -c air/node-1.air.toml
+
+  node-2:
+    desc: "Build and start Canopy node-2"
+    dir: ~/go/src/canopy-testing
+    cmds:
+      # - (cd ../canopy && make build/canopy)
+      - source eth-oracle/env/usdc_contract.env && air -c air/node-2.air.toml
+
+  node-3:
+    desc: "Build and start Canopy node-3"
+    dir: ~/go/src/canopy-testing
+    cmds:
+      # - (cd ../canopy && make build/canopy)
+      - source eth-oracle/env/usdc_contract.env && air -c air/node-3.air.toml
+
+  # Run end-to-end oracle testing automation
+  # - Loads testing environment variables
+  # - Executes the e2e Go program that:
+  #   * Maintains sell orders in the Canopy order book
+  #   * Monitors for unlocked orders and creates lock transactions on Ethereum
+  #   * Monitors for locked orders and creates close transactions (USDC transfers)
+  #   * Simulates a complete cross-chain order lifecycle
+  e2e:
+    desc: "Run automated end-to-end oracle testing (order creation, locking, closing)"
+    cmds:
+      - source eth-oracle/env/testing.env && go build . && go run .
+
+  # Launch comprehensive monitoring dashboard
+  # - Shows real-time balances (ETH, USDC, CNPY)
+  # - Displays current order book state
+  # - Shows oracle disk store contents
+  # - Refreshes every 5 seconds for live monitoring
+  monitor:
+    desc: "Start comprehensive monitoring dashboard (balances, orders, store)"
+    cmds:
+      - scripts/monitor.sh
+
+  # Monitor account balances only
+  # - ETH balances for test accounts
+  # - USDC balances for test accounts  
+  # - CNPY balances from Canopy blockchain
+  # - Refreshes every 5 seconds
+  balances:
+    desc: "Monitor ETH, USDC, and CNPY account balances"
+    cmds:
+      - scripts/monitor.sh balances
+
+  # Monitor Canopy order book state
+  # - Shows all active sell orders with details
+  # - Displays order IDs, amounts, buyer/seller addresses
+  # - Shows lock status and associated data
+  # - Refreshes every 5 seconds
+  orders:
+    desc: "Monitor Canopy order book state and order details"
+    cmds:
+      - scripts/monitor.sh orders
+
+  # Monitor oracle disk storage
+  # - Shows witnessed orders stored by the oracle
+  # - Displays order files and their contents from /var/canopy/eth
+  # - Helpful for debugging oracle storage and persistence
+  # - Refreshes every 5 seconds
+  store:
+    desc: "Monitor oracle disk storage contents (/var/canopy/eth)"
+    cmds:
+      - scripts/monitor.sh store
+
+  keygen:
+    desc: "Generate some BLS keys"
+    cmds:
+      - go run ./cmd/keygen/
+
+  chain-gen:
+    desc: "Generate chain configuration from templates"
+    cmds:
+      - go run ./cmd/chain-gen/ eth-oracle
+
+  chain-gen-default:
+    desc: "Generate chain configuration from templates"
+    cmds:
+      - go run ./cmd/chain-gen/ default
+
+  chain-gen-eth-oracle:
+    desc: "Generate chain configuration from templates"
+    cmds:
+      - go run ./cmd/chain-gen/ eth-oracle
+
+  chain-clear-data:
+    desc: "remove all canopy data for chain profile"
+    cmds:
+      - rm -rf data-dir/node-1/canopy/*
+      - rm -rf data-dir/node-2/canopy/*
+      - rm -rf data-dir/node-3/canopy/*
+
+  copy-config-docker:
+    desc: "copy generated configs (from data-dirs) to canopy source for"
+    cmds:
+      - sudo rm -f data-dir/node-1/heap*
+      - sudo rm -f data-dir/node-2/heap*
+      - sudo rm -f data-dir/node-3/heap*
+      - sudo rm -rf /home/enielson/canopy/deployments/canopy_data/node1/*
+      - sudo rm -rf /home/enielson/canopy/deployments/canopy_data/node2/*
+      - cp -a data-dir/node-1/* ~/go/src/canopy/.docker/volumes/node_1/
+      - cp -a data-dir/node-2/* ~/go/src/canopy/.docker/volumes/node_2/
+      - cp -a data-dir/node-1/* ~/canopy/deployments/canopy_data/node1/
+      - cp -a data-dir/node-2/* ~/canopy/deployments/canopy_data/node2/
