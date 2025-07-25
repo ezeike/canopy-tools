@@ -3,7 +3,7 @@ module canopy-testing
 go 1.24.4
 
 require (
-	github.com/canopy-network/canopy v0.0.0-20250720195756-5f0397b10217
+	github.com/canopy-network/canopy v0.0.0-20250718154218-1dee99ae9441
 	github.com/ethereum/go-ethereum v1.16.1
 	gopkg.in/yaml.v3 v3.0.1
 )
